@@ -690,9 +690,12 @@ function stroke(x,y){
   lastPoint={x:x,y:y};
   renderDirt();
 }
-function onStart(e){ e.preventDefault(); if(!running||!carActive)return; ac(); pressing=true; lastPoint=null; var p=pt(e); stroke(p.x,p.y); }
-function onMove(e){ e.preventDefault(); if(!pressing||!running||!carActive)return; var p=pt(e); stroke(p.x,p.y); }
-function onEnd(e){ if(e&&e.preventDefault)e.preventDefault(); pressing=false; lastPoint=null;
+// NOTE: only call preventDefault() while a wash is actually in progress. The Start / Play-again
+// buttons live inside #stage, and on iOS Safari a preventDefault() on touchstart cancels the
+// synthesized click on those buttons — which made the Start button do nothing on iPhone.
+function onStart(e){ if(!running||!carActive)return; e.preventDefault(); ac(); pressing=true; lastPoint=null; var p=pt(e); stroke(p.x,p.y); }
+function onMove(e){ if(!pressing||!running||!carActive)return; e.preventDefault(); var p=pt(e); stroke(p.x,p.y); }
+function onEnd(e){ if(!pressing)return; if(e&&e.preventDefault)e.preventDefault(); pressing=false; lastPoint=null;
   if(running&&carActive){ cleaned=measureClean(); updateBar(); if(cleaned>=0.985) finishCar(); } }
 
 stage.addEventListener("touchstart",onStart,{passive:false});
