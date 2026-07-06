@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a2b4a">
+<title>Broom Car Wash</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: #0f1830;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  #game {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, #1a2b4a 0%, #24406e 55%, #2f5a8f 100%);
+  }
+  #hud {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: calc(env(safe-area-inset-top) + 12px) 16px 12px;
+    color: #fff;
+    z-index: 5;
+  }
+  #hud .label { font-size: 14px; font-weight: 600; letter-spacing: .3px; opacity: .9; white-space: nowrap; }
+  #barWrap {
+    flex: 1;
+    height: 14px;
+    background: rgba(255,255,255,.15);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  #bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ffd54a, #7be08a);
+    border-radius: 999px;
+    transition: width .12s linear;
+  }
+  #pct { font-size: 14px; font-weight: 700; min-width: 42px; text-align: right; }
+  #stage { flex: 1; position: relative; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #hint {
+    position: absolute;
+    left: 50%;
+    bottom: calc(env(safe-area-inset-bottom) + 18px);
+    transform: translateX(-50%);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    background: rgba(0,0,0,.28);
+    padding: 8px 16px;
+    border-radius: 999px;
+    pointer-events: none;
+    z-index: 5;
+    transition: opacity .4s;
+    text-align: center;
+    white-space: nowrap;
+  }
+  #win {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #fff;
+    padding: 24px;
+  }
+  #win.show { display: flex; }
+  #win h1 {
+    font-size: 34px;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 12px rgba(0,0,0,.5);
+    animation: pop .5s ease;
+  }
+  #win p { font-size: 17px; opacity: .92; margin-bottom: 26px; text-shadow: 0 1px 6px rgba(0,0,0,.5); }
+  @keyframes pop { 0% { transform: scale(.4); opacity: 0; } 60% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
+  #again {
+    font-size: 18px;
+    font-weight: 700;
+    color: #14304f;
+    background: #ffd54a;
+    border: none;
+    border-radius: 999px;
+    padding: 14px 34px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.35);
+    cursor: pointer;
+  }
+  #again:active { transform: scale(.96); }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="hud">
+    <span class="label">Car Wash</span>
+    <div id="barWrap"><div id="bar"></div></div>
+    <span id="pct">0%</span>
+  </div>
+  <div id="stage">
+    <canvas id="scene"></canvas>   <!-- clean car (bottom) -->
+    <canvas id="dirt"></canvas>    <!-- dirt overlay you scrub off -->
+    <canvas id="fx"></canvas>      <!-- fireworks (top) -->
+    <div id="hint">Sweep the dirt off with the broom 🧹</div>
+  </div>
+  <div id="win">
+    <h1>Sparkling clean! ✨</h1>
+    <p>You swept the whole car spotless.</p>
+    <button id="again">Wash another 🧹</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var stage = document.getElementById("stage");
+  var scene = document.getElementById("scene");
+  var dirt  = document.getElementById("dirt");
+  var fx    = document.getElementById("fx");
+  var sctx = scene.getContext("2d");
+  var dctx = dirt.getContext("2d");
+  var fctx = fx.getContext("2d");
+
+  var bar  = document.getElementById("bar");
+  var pctEl = document.getElementById("pct");
+  var hint = document.getElementById("hint");
+  var winEl = document.getElementById("win");
+  var againBtn = document.getElementById("again");
+
+  var W = 0, H = 0, DPR = 1;
+  var won = false;
+  var cleaned = 0;
+  var lastPoint = null;
+  var broom = { x: 0, y: 0, angle: 0, active: false };
+
+  // ---- layout / high-DPI sizing ----
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = stage.clientWidth;
+    H = stage.clientHeight;
+    [scene, dirt, fx].forEach(function (c) {
+      c.width = Math.round(W * DPR);
+      c.height = Math.round(H * DPR);
+    });
+    [sctx, dctx, fctx].forEach(function (ctx) {
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    });
+    drawCar();
+    if (!won) paintDirt();
+  }
+
+  // ---- car geometry (centered, scales to viewport) ----
+  function carRect() {
+    var cw = Math.min(W * 0.82, 460);
+    var ch = cw * 0.52;
+    return { x: (W - cw) / 2, y: H * 0.44 - ch / 2, w: cw, h: ch };
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawCar() {
+    sctx.clearRect(0, 0, W, H);
+
+    // ground shadow
+    var r = carRect();
+    var cx = r.x + r.w / 2;
+    sctx.save();
+    sctx.fillStyle = "rgba(0,0,0,0.22)";
+    sctx.beginPath();
+    sctx.ellipse(cx, r.y + r.h + 34, r.w * 0.52, 22, 0, 0, Math.PI * 2);
+    sctx.fill();
+    sctx.restore();
+
+    // body
+    var bodyTop = r.y + r.h * 0.42;
+    var grad = sctx.createLinearGradient(0, r.y, 0, r.y + r.h);
+    grad.addColorStop(0, "#ff6b5e");
+    grad.addColorStop(1, "#d63b32");
+
+    // cabin / roof
+    sctx.fillStyle = grad;
+    sctx.beginPath();
+    sctx.moveTo(r.x + r.w * 0.26, bodyTop);
+    sctx.quadraticCurveTo(r.x + r.w * 0.34, r.y + r.h * 0.06, r.x + r.w * 0.48, r.y + r.h * 0.04);
+    sctx.lineTo(r.x + r.w * 0.60, r.y + r.h * 0.05);
+    sctx.quadraticCurveTo(r.x + r.w * 0.70, r.y + r.h * 0.10, r.x + r.w * 0.74, bodyTop);
+    sctx.closePath();
+    sctx.fill();
+
+    // lower body
+    roundRect(sctx, r.x, bodyTop, r.w, r.h * 0.5, r.h * 0.22);
+    sctx.fillStyle = grad;
+    sctx.fill();
+
+    // windows
+    sctx.fillStyle = "#bfe6ff";
+    sctx.beginPath();
+    sctx.moveTo(r.x + r.w * 0.30, bodyTop - 2);
+    sctx.quadraticCurveTo(r.x + r.w * 0.37, r.y + r.h * 0.14, r.x + r.w * 0.475, r.y + r.h * 0.13);
+    sctx.lineTo(r.x + r.w * 0.475, bodyTop - 2);
+    sctx.closePath();
+    sctx.fill();
+    sctx.beginPath();
+    sctx.moveTo(r.x + r.w * 0.505, bodyTop - 2);
+    sctx.lineTo(r.x + r.w * 0.505, r.y + r.h * 0.13);
+    sctx.lineTo(r.x + r.w * 0.585, r.y + r.h * 0.14);
+    sctx.quadraticCurveTo(r.x + r.w * 0.66, r.y + r.h * 0.17, r.x + r.w * 0.70, bodyTop - 2);
+    sctx.closePath();
+    sctx.fill();
+
+    // door line + handle
+    sctx.strokeStyle = "rgba(120,20,15,0.5)";
+    sctx.lineWidth = 2;
+    sctx.beginPath();
+    sctx.moveTo(r.x + r.w * 0.49, bodyTop + 4);
+    sctx.lineTo(r.x + r.w * 0.49, bodyTop + r.h * 0.42);
+    sctx.stroke();
+    sctx.fillStyle = "rgba(120,20,15,0.55)";
+    roundRect(sctx, r.x + r.w * 0.40, bodyTop + r.h * 0.16, r.w * 0.06, r.h * 0.05, 3);
+    sctx.fill();
+
+    // headlight
+    sctx.fillStyle = "#ffe9a8";
+    roundRect(sctx, r.x + r.w * 0.90, bodyTop + r.h * 0.10, r.w * 0.07, r.h * 0.12, 5);
+    sctx.fill();
+
+    // wheels
+    var wy = bodyTop + r.h * 0.5;
+    var wr = r.h * 0.20;
+    [0.24, 0.76].forEach(function (fracc) {
+      var wx = r.x + r.w * fracc;
+      sctx.fillStyle = "#1c1c22";
+      sctx.beginPath(); sctx.arc(wx, wy, wr, 0, Math.PI * 2); sctx.fill();
+      sctx.fillStyle = "#c9ccd4";
+      sctx.beginPath(); sctx.arc(wx, wy, wr * 0.5, 0, Math.PI * 2); sctx.fill();
+    });
+  }
+
+  // ---- dirt overlay ----
+  function paintDirt() {
+    dctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    dctx.clearRect(0, 0, W, H);
+    var r = carRect();
+
+    // clip to the car area so only the car gets dirty
+    dctx.save();
+    var pad = r.h * 0.06;
+    roundRect(dctx, r.x - pad, r.y - pad, r.w + pad * 2, r.h + pad * 2, r.h * 0.3);
+    dctx.clip();
+
+    // base grime
+    var g = dctx.createLinearGradient(0, r.y, 0, r.y + r.h);
+    g.addColorStop(0, "#8a7a5f");
+    g.addColorStop(1, "#5f5340");
+    dctx.fillStyle = g;
+    dctx.fillRect(r.x - pad, r.y - pad, r.w + pad * 2, r.h + pad * 2);
+
+    // mud splotches for texture
+    var blobs = 190;
+    for (var i = 0; i < blobs; i++) {
+      var bx = r.x - pad + Math.random() * (r.w + pad * 2);
+      var by = r.y - pad + Math.random() * (r.h + pad * 2);
+      var rad = 6 + Math.random() * 26;
+      var shade = 60 + Math.floor(Math.random() * 60);
+      dctx.beginPath();
+      dctx.fillStyle = "rgba(" + (shade + 30) + "," + (shade + 10) + "," + (shade - 20) + ",0.55)";
+      dctx.arc(bx, by, rad, 0, Math.PI * 2);
+      dctx.fill();
+    }
+    dctx.restore();
+
+    // erase-mode brush from here on
+    dctx.globalCompositeOperation = "destination-out";
+    cleaned = 0;
+    updateHud();
+    won = false;
+    winEl.classList.remove("show");
+    hint.style.opacity = "1";
+  }
+
+  // ---- scrubbing ----
+  function scrubAt(x, y) {
+    if (won) return;
+    var rad = Math.max(24, Math.min(W, H) * 0.075);
+    // soft round eraser
+    var grad = dctx.createRadialGradient(x, y, rad * 0.2, x, y, rad);
+    grad.addColorStop(0, "rgba(0,0,0,1)");
+    grad.addColorStop(0.7, "rgba(0,0,0,1)");
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    dctx.fillStyle = grad;
+
+    if (lastPoint) {
+      // interpolate for smooth strokes on fast swipes
+      var dx = x - lastPoint.x, dy = y - lastPoint.y;
+      var dist = Math.hypot(dx, dy);
+      var steps = Math.ceil(dist / (rad * 0.4));
+      for (var i = 0; i <= steps; i++) {
+        var t = steps === 0 ? 0 : i / steps;
+        var px = lastPoint.x + dx * t;
+        var py = lastPoint.y + dy * t;
+        dctx.beginPath();
+        dctx.arc(px, py, rad, 0, Math.PI * 2);
+        dctx.fill();
+      }
+      broom.angle = Math.atan2(dy, dx);
+    } else {
+      dctx.beginPath();
+      dctx.arc(x, y, rad, 0, Math.PI * 2);
+      dctx.fill();
+    }
+    lastPoint = { x: x, y: y };
+  }
+
+  // sample the dirt layer to measure how clean the car is
+  var sampleW = 60, sampleH = 60;
+  var sampleCanvas = document.createElement("canvas");
+  sampleCanvas.width = sampleW; sampleCanvas.height = sampleH;
+  var sampleCtx = sampleCanvas.getContext("2d");
+
+  function measureClean() {
+    sampleCtx.clearRect(0, 0, sampleW, sampleH);
+    sampleCtx.drawImage(dirt, 0, 0, sampleW, sampleH);
+    var data = sampleCtx.getImageData(0, 0, sampleW, sampleH).data;
+    var dirtyPixels = 0, total = 0;
+    var r = carRect();
+    // only count pixels inside the car footprint
+    for (var py = 0; py < sampleH; py++) {
+      for (var px = 0; px < sampleW; px++) {
+        var wx = px / sampleW * W;
+        var wy = py / sampleH * H;
+        if (wx < r.x - r.h * 0.06 || wx > r.x + r.w + r.h * 0.06) continue;
+        if (wy < r.y - r.h * 0.06 || wy > r.y + r.h + r.h * 0.06) continue;
+        total++;
+        var a = data[(py * sampleW + px) * 4 + 3];
+        if (a > 40) dirtyPixels++;
+      }
+    }
+    if (total === 0) return 1;
+    return 1 - dirtyPixels / total;
+  }
+
+  function updateHud() {
+    var p = Math.round(cleaned * 100);
+    bar.style.width = p + "%";
+    pctEl.textContent = p + "%";
+  }
+
+  function checkClean() {
+    cleaned = measureClean();
+    updateHud();
+    if (!won && cleaned >= 0.97) triggerWin();
+  }
+
+  // ---- broom drawing on fx layer ----
+  function drawBroom() {
+    if (!broom.active || won) return;
+    var s = Math.min(W, H) * 0.16;
+    fctx.save();
+    fctx.translate(broom.x, broom.y);
+    fctx.rotate(broom.angle + Math.PI / 2);
+    // bristles
+    fctx.fillStyle = "#f4c542";
+    roundRect(fctx, -s * 0.32, 0, s * 0.64, s * 0.42, 6);
+    fctx.fill();
+    fctx.strokeStyle = "rgba(120,80,10,.5)";
+    fctx.lineWidth = 1.5;
+    for (var i = -3; i <= 3; i++) {
+      fctx.beginPath();
+      fctx.moveTo(i * s * 0.09, s * 0.02);
+      fctx.lineTo(i * s * 0.09, s * 0.42);
+      fctx.stroke();
+    }
+    // binding
+    fctx.fillStyle = "#8a5a22";
+    roundRect(fctx, -s * 0.34, -s * 0.06, s * 0.68, s * 0.12, 4);
+    fctx.fill();
+    // handle
+    fctx.strokeStyle = "#a9743a";
+    fctx.lineWidth = s * 0.12;
+    fctx.lineCap = "round";
+    fctx.beginPath();
+    fctx.moveTo(0, -s * 0.06);
+    fctx.lineTo(0, -s * 1.05);
+    fctx.stroke();
+    fctx.restore();
+  }
+
+  // ---- fireworks ----
+  var particles = [];
+  var GRAV = 0.05;
+  function launchFirework() {
+    var cx = Math.random() * W;
+    var cy = H * (0.15 + Math.random() * 0.35);
+    var hue = Math.floor(Math.random() * 360);
+    var n = 40 + Math.floor(Math.random() * 30);
+    for (var i = 0; i < n; i++) {
+      var ang = (Math.PI * 2 * i) / n;
+      var spd = 1.5 + Math.random() * 3.5;
+      particles.push({
+        x: cx, y: cy,
+        vx: Math.cos(ang) * spd,
+        vy: Math.sin(ang) * spd,
+        life: 1,
+        decay: 0.008 + Math.random() * 0.012,
+        hue: hue + Math.random() * 30,
+        size: 2 + Math.random() * 2
+      });
+    }
+  }
+
+  function triggerWin() {
+    won = true;
+    broom.active = false;
+    hint.style.opacity = "0";
+    winEl.classList.add("show");
+    if (navigator.vibrate) navigator.vibrate([40, 60, 40, 60, 120]);
+    for (var i = 0; i < 4; i++) {
+      setTimeout(launchFirework, i * 220);
+    }
+    fireworkTimer = setInterval(function () {
+      if (particles.length < 400) launchFirework();
+    }, 650);
+  }
+  var fireworkTimer = null;
+
+  // ---- main render loop ----
+  function loop() {
+    fctx.clearRect(0, 0, W, H);
+
+    if (won) {
+      for (var i = particles.length - 1; i >= 0; i--) {
+        var p = particles[i];
+        p.vy += GRAV;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= p.decay;
+        if (p.life <= 0) { particles.splice(i, 1); continue; }
+        fctx.globalAlpha = Math.max(p.life, 0);
+        fctx.fillStyle = "hsl(" + p.hue + ",100%,60%)";
+        fctx.beginPath();
+        fctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        fctx.fill();
+      }
+      fctx.globalAlpha = 1;
+    } else {
+      drawBroom();
+    }
+    requestAnimationFrame(loop);
+  }
+
+  // ---- input ----
+  function pointFromEvent(e) {
+    var rect = stage.getBoundingClientRect();
+    var t = e.touches && e.touches[0] ? e.touches[0] : e;
+    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+  }
+
+  function onStart(e) {
+    e.preventDefault();
+    if (won) return;
+    var p = pointFromEvent(e);
+    broom.active = true;
+    broom.x = p.x; broom.y = p.y;
+    lastPoint = null;
+    scrubAt(p.x, p.y);
+    hint.style.opacity = "0";
+  }
+  function onMove(e) {
+    e.preventDefault();
+    if (won || !broom.active) return;
+    var p = pointFromEvent(e);
+    broom.x = p.x; broom.y = p.y;
+    scrubAt(p.x, p.y);
+  }
+  function onEnd(e) {
+    e.preventDefault();
+    broom.active = false;
+    lastPoint = null;
+    checkClean();
+  }
+
+  stage.addEventListener("touchstart", onStart, { passive: false });
+  stage.addEventListener("touchmove", onMove, { passive: false });
+  stage.addEventListener("touchend", onEnd, { passive: false });
+  stage.addEventListener("touchcancel", onEnd, { passive: false });
+  stage.addEventListener("mousedown", onStart);
+  window.addEventListener("mousemove", function (e) { if (broom.active) onMove(e); });
+  window.addEventListener("mouseup", onEnd);
+
+  // periodic clean check while scrubbing (cheaper than every move)
+  setInterval(function () { if (broom.active && !won) checkClean(); }, 250);
+
+  againBtn.addEventListener("click", function () {
+    if (fireworkTimer) { clearInterval(fireworkTimer); fireworkTimer = null; }
+    particles = [];
+    drawCar();
+    paintDirt();
+  });
+
+  window.addEventListener("resize", resize);
+  window.addEventListener("orientationchange", function () { setTimeout(resize, 300); });
+
+  // boot
+  resize();
+  loop();
+})();
+</script>
+</body>
+</html>
