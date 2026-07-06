@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#122">
-<title>Broom Car Wash Deluxe</title>
+<title>Tues Carwash</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>">
 <style>
@@ -23,9 +23,11 @@
   .stat { background:rgba(0,0,0,.28); border-radius:10px; padding:5px 10px; line-height:1.1; }
   .stat .k { font-size:10px; text-transform:uppercase; letter-spacing:.5px; opacity:.75; }
   .stat .v { font-size:16px; font-weight:800; }
-  #score .v { color:#ffe066; }
-  #brandTag { margin-left:auto; font-size:13px; font-weight:700; background:rgba(0,0,0,.28);
-    padding:6px 12px; border-radius:999px; max-width:52%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #score .v { color:#7be08a; }
+  #brandTag { font-size:13px; font-weight:700; background:rgba(0,0,0,.28);
+    padding:6px 12px; border-radius:999px; max-width:44%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #music { margin-left:auto; font-size:18px; background:rgba(0,0,0,.28); border-radius:999px;
+    width:38px; height:38px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
   #barRow { display:flex; align-items:center; gap:8px; width:100%; padding:0 12px 4px; }
   #barWrap { flex:1; height:12px; background:rgba(255,255,255,.15); border-radius:999px; overflow:hidden; }
   #bar { height:100%; width:0%; background:linear-gradient(90deg,#ffd54a,#7be08a); transition:width .1s linear; }
@@ -46,6 +48,7 @@
   #speech { position:absolute; left:8px; top:8px; display:flex; flex-direction:column; gap:6px; z-index:7; pointer-events:none; max-width:70%; }
   .bubble { background:#fff; color:#122; font-size:13px; font-weight:600; padding:7px 11px; border-radius:12px;
     box-shadow:0 3px 10px rgba(0,0,0,.3); animation:bpop .3s ease; align-self:flex-start; }
+  .bubble.evil { background:#3a1030; color:#ffd; }
   @keyframes bpop { 0%{transform:scale(.6);opacity:0} 100%{transform:scale(1);opacity:1} }
 
   #flash { position:absolute; inset:0; display:none; align-items:center; justify-content:center;
@@ -69,14 +72,14 @@
   #over.show { display:flex; }
   #over h1 { font-size:30px; margin-bottom:6px; }
   #over p { font-size:16px; opacity:.9; margin:2px 0; }
-  #over .final { font-size:44px; font-weight:900; color:#ffe066; margin:12px 0; }
+  #over .final { font-size:44px; font-weight:900; color:#7be08a; margin:12px 0; }
   #over button { margin-top:18px; font-size:18px; font-weight:800; color:#122; background:#ffe066;
     border:none; border-radius:999px; padding:14px 34px; box-shadow:0 6px 18px rgba(0,0,0,.4); cursor:pointer; }
   #over button:active { transform:scale(.96); }
 
   #start { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
     text-align:center; z-index:25; background:linear-gradient(180deg,#16324f,#245073); padding:24px; }
-  #start h1 { font-size:30px; margin-bottom:8px; }
+  #start h1 { font-size:32px; margin-bottom:8px; }
   #start p { font-size:15px; opacity:.9; max-width:340px; margin:3px 0; }
   #start button { margin-top:22px; font-size:20px; font-weight:800; color:#122; background:#ffe066;
     border:none; border-radius:999px; padding:16px 40px; box-shadow:0 6px 18px rgba(0,0,0,.4); cursor:pointer; }
@@ -86,10 +89,11 @@
 <body>
 <div id="game">
   <div id="hud">
-    <div class="stat" id="score"><div class="k">Score</div><div class="v" id="scoreV">0</div></div>
-    <div class="stat"><div class="k">Best</div><div class="v" id="hsV">0</div></div>
+    <div class="stat" id="score"><div class="k">Money</div><div class="v" id="scoreV">0 kr</div></div>
+    <div class="stat"><div class="k">Best</div><div class="v" id="hsV">0 kr</div></div>
     <div class="stat"><div class="k">Car</div><div class="v" id="carV">1/100</div></div>
     <div id="brandTag">—</div>
+    <div id="music" title="Music on/off">🔊</div>
   </div>
   <div id="barRow">
     <div id="barWrap"><div id="bar"></div></div>
@@ -106,15 +110,15 @@
     <div id="over">
       <h1 id="overTitle">All done! 🎉</h1>
       <p id="overLine">You washed every car.</p>
-      <div class="final" id="overScore">0</div>
+      <div class="final" id="overScore">0 kr</div>
       <p id="overHs"></p>
       <button id="overBtn">Play again</button>
     </div>
     <div id="start">
-      <h1>🚗🧽 Car Wash Deluxe</h1>
+      <h1>🚗🧽 Tues Carwash</h1>
       <p>Clean up to 100 cars. Pick a tool, scrub the car, rinse the soap, do the rims.</p>
-      <p>Watch out: seagulls poop, bugs stick to the front — and the steel brush scratches the paint, so dad gets angry!</p>
-      <p>The faster and cleaner you are, the higher your score.</p>
+      <p>The more expensive the car, the more money you earn. Fast + clean = big money.</p>
+      <p>Watch out: seagulls poop, bugs stick to the front, and <b>Morten</b> sneaks in to throw mud. The steel brush scratches the paint — so dad gets angry!</p>
       <div class="hs" id="startHs"></div>
       <button id="startBtn">Start washing 🧽</button>
     </div>
@@ -128,21 +132,22 @@
 "use strict";
 
 // ---------- data ----------
+// p = price tier -> the pricier the car, the more money a clean wash pays.
 var BRANDS = [
-  {n:"Toyota",c:"#e02a2a",s:"sedan"},{n:"Volkswagen",c:"#1b62b0",s:"hatch"},
-  {n:"Ford",c:"#0a4aa0",s:"pickup"},{n:"BMW",c:"#2a6bd6",s:"sport"},
-  {n:"Mercedes-Benz",c:"#8a9199",s:"sedan"},{n:"Audi",c:"#111418",s:"sport"},
-  {n:"Tesla",c:"#c0392b",s:"sedan"},{n:"Volvo",c:"#243a52",s:"suv"},
-  {n:"Honda",c:"#d63333",s:"hatch"},{n:"Nissan",c:"#c0c4c9",s:"suv"},
-  {n:"Hyundai",c:"#3d6ea5",s:"hatch"},{n:"Kia",c:"#111418",s:"suv"},
-  {n:"Peugeot",c:"#2e7d55",s:"hatch"},{n:"Renault",c:"#f0c419",s:"hatch"},
-  {n:"Škoda",c:"#2f6a4f",s:"sedan"},{n:"Fiat",c:"#b03a3a",s:"hatch"},
-  {n:"Mazda",c:"#8a1f1f",s:"sport"},{n:"Porsche",c:"#e0b000",s:"sport"},
-  {n:"Jeep",c:"#3a5a2a",s:"suv"},{n:"Land Rover",c:"#25543f",s:"suv"},
-  {n:"Chevrolet",c:"#c9a227",s:"pickup"},{n:"Subaru",c:"#2b4a7a",s:"suv"},
-  {n:"Mini",c:"#c0392b",s:"hatch"},{n:"Opel",c:"#c7cace",s:"hatch"},
-  {n:"Citroën",c:"#7a4ba0",s:"hatch"},{n:"Dodge",c:"#a02020",s:"sport"},
-  {n:"Lamborghini",c:"#e8b800",s:"sport"},{n:"Ferrari",c:"#d61a1a",s:"sport"}
+  {n:"Toyota",c:"#e02a2a",s:"sedan",p:1.5},{n:"Volkswagen",c:"#1b62b0",s:"hatch",p:1.6},
+  {n:"Ford",c:"#0a4aa0",s:"pickup",p:1.5},{n:"BMW",c:"#2a6bd6",s:"sport",p:3},
+  {n:"Mercedes-Benz",c:"#8a9199",s:"sedan",p:3.2},{n:"Audi",c:"#111418",s:"sport",p:3},
+  {n:"Tesla",c:"#c0392b",s:"sedan",p:3.5},{n:"Volvo",c:"#243a52",s:"suv",p:2.2},
+  {n:"Honda",c:"#d63333",s:"hatch",p:1.5},{n:"Nissan",c:"#c0c4c9",s:"suv",p:1.4},
+  {n:"Hyundai",c:"#3d6ea5",s:"hatch",p:1.3},{n:"Kia",c:"#111418",s:"suv",p:1.3},
+  {n:"Peugeot",c:"#2e7d55",s:"hatch",p:1.3},{n:"Renault",c:"#f0c419",s:"hatch",p:1.2},
+  {n:"Škoda",c:"#2f6a4f",s:"sedan",p:1.4},{n:"Fiat",c:"#b03a3a",s:"hatch",p:1.1},
+  {n:"Mazda",c:"#8a1f1f",s:"sport",p:1.5},{n:"Porsche",c:"#e0b000",s:"sport",p:4.5},
+  {n:"Jeep",c:"#3a5a2a",s:"suv",p:2},{n:"Land Rover",c:"#25543f",s:"suv",p:3.5},
+  {n:"Chevrolet",c:"#c9a227",s:"pickup",p:1.8},{n:"Subaru",c:"#2b4a7a",s:"suv",p:1.8},
+  {n:"Mini",c:"#c0392b",s:"hatch",p:1.6},{n:"Opel",c:"#c7cace",s:"hatch",p:1.2},
+  {n:"Citroën",c:"#7a4ba0",s:"hatch",p:1.2},{n:"Dodge",c:"#a02020",s:"sport",p:2.2},
+  {n:"Lamborghini",c:"#e8b800",s:"sport",p:5.5},{n:"Ferrari",c:"#d61a1a",s:"sport",p:6}
 ];
 
 // tools: pw = strength vs dirt type; scratch adds paint damage; soap adds foam; rinse removes foam
@@ -165,6 +170,14 @@ var TAUNTS = [
   "Vi står i kø her, tøsedreng!"
 ];
 
+var MORTEN_LINES = [
+  "Hæhæ! Nu blev den beskidt igen!",
+  "Mudder til dig, hæhæ!",
+  "Den bliver aldrig ren, hæhæ!",
+  "Værsgo, lidt ekstra snavs!",
+  "Hæhæ, held og lykke med den!"
+];
+
 // ---------- dom ----------
 var scene=document.getElementById("scene"), dirt=document.getElementById("dirt"), fx=document.getElementById("fx");
 var sctx=scene.getContext("2d"), dctx=dirt.getContext("2d"), fctx=fx.getContext("2d");
@@ -173,6 +186,7 @@ var scoreV=document.getElementById("scoreV"), hsV=document.getElementById("hsV")
 var brandTag=document.getElementById("brandTag"), bar=document.getElementById("bar"), barPct=document.getElementById("barPct");
 var flash=document.getElementById("flash"), flashBig=document.getElementById("flashBig"), flashSub=document.getElementById("flashSub");
 var dadEl=document.getElementById("dad"), over=document.getElementById("over"), startEl=document.getElementById("start");
+var musicBtn=document.getElementById("music");
 
 // ---------- state ----------
 var W=0,H=0,DPR=1;
@@ -185,9 +199,9 @@ var brand=null, carIndex=0, TOTAL=100;
 var score=0, highscore=0, carScore=0, scratches=0, dadShown=false;
 var carStart=0, running=false, carActive=false, cleaned=0;
 var tool=TOOLS[1];             // default sponge
-var particles=[], seagulls=[], sprays=[];
+var particles=[], seagulls=[], sprays=[], mortens=[], muds=[];
 var lastPoint=null, pressing=false;
-var seagullTimer=0, tauntTimer=0, animTime=0, lastTs=0;
+var seagullTimer=0, tauntTimer=0, mortenTimer=0, animTime=0, lastTs=0;
 
 try { highscore=parseInt(localStorage.getItem("carwash_highscore")||"0",10)||0; } catch(e){}
 
@@ -205,7 +219,72 @@ function noise(dur,vol){ var a=ac(); if(!a)return; var n=a.createBufferSource();
 function scratchSnd(){ beep(90,0.12,"sawtooth",0.05); noise(0.08,0.06); }
 function sparkle(){ beep(880,0.12,"sine",0.08); setTimeout(function(){beep(1320,0.16,"sine",0.08);},110); }
 function splat(){ beep(120,0.1,"square",0.06); }
-function speak(txt){ try{ if(!window.speechSynthesis)return; var u=new SpeechSynthesisUtterance(txt); u.lang="da-DK"; u.rate=1.05; u.pitch=0.9; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);}catch(e){} }
+function evilLaugh(){ beep(160,0.14,"sawtooth",0.08); setTimeout(function(){beep(130,0.14,"sawtooth",0.08);},150);
+  setTimeout(function(){beep(100,0.2,"sawtooth",0.08);},300); }
+
+// ---------- voices ----------
+var VOICES=[], chosenVoice=null;
+function loadVoices(){ try{ VOICES=(window.speechSynthesis&&window.speechSynthesis.getVoices())||[]; chosenVoice=null; }catch(e){} }
+if(window.speechSynthesis){ loadVoices(); try{ window.speechSynthesis.onvoiceschanged=loadVoices; }catch(e){} }
+function pickVoice(){
+  if(chosenVoice) return chosenVoice;
+  if(!VOICES.length) loadVoices();
+  var pref=["da-DK","da_DK","da"];
+  for(var p=0;p<pref.length;p++){ for(var i=0;i<VOICES.length;i++){ if((VOICES[i].lang||"").toLowerCase().indexOf(pref[p].toLowerCase())===0){ chosenVoice=VOICES[i]; return chosenVoice; } } }
+  for(var j=0;j<VOICES.length;j++){ if(/danish|dansk/i.test(VOICES[j].name||"")){ chosenVoice=VOICES[j]; return chosenVoice; } }
+  return null;
+}
+function speak(txt,opt){ opt=opt||{}; try{ if(!window.speechSynthesis)return;
+  var u=new SpeechSynthesisUtterance(txt); var v=pickVoice(); if(v)u.voice=v;
+  u.lang="da-DK"; u.rate=opt.rate||1.0; u.pitch=(opt.pitch!==undefined?opt.pitch:1.0); u.volume=opt.volume||1;
+  window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+}catch(e){} }
+
+// ---------- background music (free funky "car wash" groove, generated) ----------
+var musicGain=null, musicOn=true, musicTimer=null, mNextTime=0, mStep=0;
+var BPM=112;
+// bass line over 16 sixteenth-steps (semitone offsets from root E2)
+var BASS=[0,0,7,0, 3,3,10,0, 5,5,0,7, 3,10,7,3];
+var ROOT=82.41; // E2
+function midiF(semi){ return ROOT*Math.pow(2,semi/12); }
+function ensureMusicGain(){ var a=ac(); if(!a)return null; if(!musicGain){ musicGain=a.createGain(); musicGain.gain.value=musicOn?0.10:0; musicGain.connect(a.destination); } return musicGain; }
+function mOsc(freq,t,dur,type,vol){ var a=ac(); if(!a)return; var g=ensureMusicGain(); var o=a.createOscillator(), g2=a.createGain();
+  o.type=type; o.frequency.value=freq; o.connect(g2); g2.connect(g); g2.gain.setValueAtTime(0.0001,t);
+  g2.gain.exponentialRampToValueAtTime(vol,t+0.012); g2.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.start(t); o.stop(t+dur+0.02); }
+function mKick(t){ var a=ac(); if(!a)return; var g=ensureMusicGain(); var o=a.createOscillator(),g2=a.createGain();
+  o.type="sine"; o.frequency.setValueAtTime(140,t); o.frequency.exponentialRampToValueAtTime(45,t+0.14);
+  o.connect(g2); g2.connect(g); g2.gain.setValueAtTime(0.9,t); g2.gain.exponentialRampToValueAtTime(0.0001,t+0.18); o.start(t); o.stop(t+0.2); }
+function mHat(t,accent){ var a=ac(); if(!a)return; var g=ensureMusicGain(); var n=a.createBufferSource();
+  var b=a.createBuffer(1,Math.floor(a.sampleRate*0.05),a.sampleRate); var d=b.getChannelData(0);
+  for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1); n.buffer=b;
+  var f=a.createBiquadFilter(); f.type="highpass"; f.frequency.value=7000; var g2=a.createGain();
+  g2.gain.setValueAtTime(accent?0.5:0.22,t); g2.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+  n.connect(f); f.connect(g2); g2.connect(g); n.start(t); n.stop(t+0.05); }
+function mClap(t){ var a=ac(); if(!a)return; var g=ensureMusicGain(); var n=a.createBufferSource();
+  var b=a.createBuffer(1,Math.floor(a.sampleRate*0.12),a.sampleRate); var d=b.getChannelData(0);
+  for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1); n.buffer=b;
+  var f=a.createBiquadFilter(); f.type="bandpass"; f.frequency.value=1600; var g2=a.createGain();
+  g2.gain.setValueAtTime(0.6,t); g2.gain.exponentialRampToValueAtTime(0.0001,t+0.12);
+  n.connect(f); f.connect(g2); g2.connect(g); n.start(t); n.stop(t+0.12); }
+function scheduleStep(step,t){
+  var stepDur=(60/BPM)/4;
+  // bass on every step (short, funky)
+  mOsc(midiF(BASS[step])/2, t, stepDur*1.05, "sawtooth", 0.16);
+  // drums
+  if(step===0||step===6||step===10) mKick(t);
+  if(step===4||step===12) mClap(t);
+  mHat(t, step%2===0);
+  // wah chord stab on the 'and' of beats
+  if(step===2||step===8||step===14){ mOsc(midiF(BASS[step]+12),t,stepDur*1.6,"square",0.05); mOsc(midiF(BASS[step]+19),t,stepDur*1.6,"square",0.04); }
+}
+function musicScheduler(){ var a=ac(); if(!a)return; var stepDur=(60/BPM)/4;
+  while(mNextTime < a.currentTime + 0.14){ scheduleStep(mStep, mNextTime); mStep=(mStep+1)%16; mNextTime+=stepDur; } }
+function startMusic(){ var a=ac(); if(!a)return; ensureMusicGain(); if(musicTimer)return;
+  mNextTime=a.currentTime+0.1; mStep=0; musicTimer=setInterval(musicScheduler,25); }
+function setMusic(on){ musicOn=on; musicBtn.textContent=on?"🔊":"🔇";
+  var a=ac(); if(musicGain&&a){ musicGain.gain.setTargetAtTime(on?0.10:0, a.currentTime, 0.05); }
+  if(on) startMusic(); }
+musicBtn.addEventListener("click",function(){ ac(); setMusic(!musicOn); });
 
 // ---------- sizing ----------
 function resize(){
@@ -213,7 +292,21 @@ function resize(){
   W=stage.clientWidth; H=stage.clientHeight;
   [scene,dirt,fx].forEach(function(c){ c.width=Math.round(W*DPR); c.height=Math.round(H*DPR); });
   [sctx,dctx,fctx].forEach(function(ctx){ ctx.setTransform(DPR,0,0,DPR,0,0); });
-  if(brand){ geo=computeGeo(); buildCar(brand); renderDirt(); }
+  if(brand){ geo=computeGeo(); buildCar(brand); reprojectCells(); renderDirt(); }
+}
+
+// keep the dirt grid aligned to the car after a resize / orientation change,
+// preserving each cell's dirt while recomputing its position and in-car flag
+function reprojectCells(){
+  if(!cells.length || !maskImg) return;
+  var g=geo, wy=g.y+g.h*0.94, wr=g.h*0.2, wxs=[g.x+g.w*0.24, g.x+g.w*0.76];
+  for(var iy=0; iy<GH; iy++){ for(var ix=0; ix<GW; ix++){
+    var c=cells[iy*GW+ix]; if(!c) continue;
+    var a=maskImg.data[(iy*GW+ix)*4+3];
+    var p=cellPx(ix,iy); c.x=p.x; c.y=p.y; c.inCar=a>60;
+    var isRim=false; for(var w=0;w<wxs.length;w++){ if(Math.hypot(p.x-wxs[w], p.y-wy)<wr*0.7){ isRim=true; break; } }
+    c.isRim=isRim;
+  } }
 }
 
 // ---------- geometry ----------
@@ -249,7 +342,10 @@ function paintCar(ctx, g, b, solid){
     }
   });
 
-  var grad=solid?null:(function(){ var gr=ctx.createLinearGradient(0,g.y,0,g.y+g.h); gr.addColorStop(0,shade(b.c,1.15)); gr.addColorStop(1,shade(b.c,0.8)); return gr; })();
+  // body paint gradient with a glossy highlight band for a more 3D look
+  var grad=solid?null:(function(){ var gr=ctx.createLinearGradient(0,g.y,0,g.y+g.h);
+    gr.addColorStop(0,shade(b.c,1.28)); gr.addColorStop(0.35,shade(b.c,1.05));
+    gr.addColorStop(0.55,shade(b.c,0.92)); gr.addColorStop(1,shade(b.c,0.7)); return gr; })();
 
   // lower body
   ctx.fillStyle=solid?"#000":grad;
@@ -265,6 +361,14 @@ function paintCar(ctx, g, b, solid){
 
   if(solid) return;
 
+  // glossy reflection stripe along the body (3D sheen)
+  ctx.save();
+  rr(ctx,g.x,bodyTop,g.w,g.h*0.5,g.h*0.2); ctx.clip();
+  var sh=ctx.createLinearGradient(0,bodyTop,0,bodyTop+g.h*0.5);
+  sh.addColorStop(0,"rgba(255,255,255,.32)"); sh.addColorStop(0.18,"rgba(255,255,255,.06)"); sh.addColorStop(0.5,"rgba(255,255,255,0)");
+  ctx.fillStyle=sh; ctx.fillRect(g.x,bodyTop,g.w,g.h*0.5);
+  ctx.restore();
+
   // windows
   ctx.fillStyle="#bfe6ff";
   ctx.beginPath();
@@ -274,6 +378,9 @@ function paintCar(ctx, g, b, solid){
   ctx.moveTo(g.x+g.w*0.50,bodyTop-2); ctx.lineTo(g.x+g.w*0.50,roofY+g.h*0.02);
   ctx.lineTo(g.x+g.w*0.59,roofY+g.h*0.02); ctx.quadraticCurveTo(g.x+g.w*0.67,roofY+g.h*0.05,g.x+g.w*0.71,bodyTop-2);
   ctx.closePath(); ctx.fill();
+  // window glass reflection
+  ctx.fillStyle="rgba(255,255,255,.25)";
+  ctx.beginPath(); ctx.moveTo(g.x+g.w*0.31,bodyTop-2); ctx.lineTo(g.x+g.w*0.37,roofY+g.h*0.05); ctx.lineTo(g.x+g.w*0.40,roofY+g.h*0.05); ctx.lineTo(g.x+g.w*0.35,bodyTop-2); ctx.closePath(); ctx.fill();
 
   // headlight (front = right)
   ctx.fillStyle="#ffe9a8"; rr(ctx,g.x+g.w*0.90,bodyTop+g.h*0.08,g.w*0.07,g.h*0.13,4); ctx.fill();
@@ -323,7 +430,8 @@ function initCells(){
       var p=cellPx(ix,iy);
       var isRim=false;
       for(var w=0;w<wxs.length;w++){ if(Math.hypot(p.x-wxs[w], p.y-wy)<wr*0.7){ isRim=true; break; } }
-      cells.push({ ix:ix, iy:iy, x:p.x, y:p.y, inCar:a>60, isRim:isRim, dirt:0, max:0, type:"dust", soap:false, scratch:0 });
+      cells.push({ ix:ix, iy:iy, x:p.x, y:p.y, inCar:a>60, isRim:isRim, dirt:0, max:0, type:"dust", soap:false, scratch:0,
+        ox:(Math.random()*2-1)*0.4, oy:(Math.random()*2-1)*0.4, rj:0.75+Math.random()*0.55, tone:0.82+Math.random()*0.36 });
     }
   }
 }
@@ -352,24 +460,35 @@ function renderDirt(){
   dctx.setTransform(DPR,0,0,DPR,0,0);
   dctx.clearRect(0,0,W,H);
   dctx.globalCompositeOperation="source-over";
-  var cw=W/GW, ch=H/GH;
+  var cw=W/GW, ch=H/GH, rBase=Math.max(cw,ch)*0.62;
   for(var i=0;i<cells.length;i++){
     var c=cells[i]; if(!c.inCar) continue;
-    var px=c.ix/GW*W, py=c.iy/GH*H;
+    var cx=(c.ix+0.5)/GW*W + c.ox*cw, cy=(c.iy+0.5)/GH*H + c.oy*ch;
     if(c.dirt>0){
       var col=DIRT_COL[c.type]||DIRT_COL.dust;
-      var alpha=Math.min(0.92, 0.32 + c.dirt/Math.max(c.max,1)*0.6);
-      dctx.fillStyle="rgba("+col[0]+","+col[1]+","+col[2]+","+alpha+")";
-      dctx.fillRect(px-0.5, py-0.5, cw+1, ch+1);
-      if(c.type==="bug"){ dctx.fillStyle="rgba(20,12,6,0.9)"; dctx.fillRect(px+cw*0.3,py+ch*0.3,cw*0.4,ch*0.4); }
+      var dens=c.dirt/Math.max(c.max,1);
+      var alpha=Math.min(0.8, 0.20 + dens*0.5);
+      var r0=Math.round(col[0]*c.tone), g0=Math.round(col[1]*c.tone), b0=Math.round(col[2]*c.tone);
+      var rad=rBase*c.rj*(0.5+dens*0.35);
+      // soft organic blob
+      var rg=dctx.createRadialGradient(cx,cy,rad*0.15,cx,cy,rad);
+      rg.addColorStop(0,"rgba("+r0+","+g0+","+b0+","+alpha+")");
+      rg.addColorStop(0.7,"rgba("+r0+","+g0+","+b0+","+(alpha*0.7)+")");
+      rg.addColorStop(1,"rgba("+r0+","+g0+","+b0+",0)");
+      dctx.fillStyle=rg; dctx.beginPath(); dctx.arc(cx,cy,rad,0,7); dctx.fill();
+      if(c.type==="mud"||c.type==="grime"){ // darker speckle core for texture
+        dctx.fillStyle="rgba("+Math.round(r0*0.6)+","+Math.round(g0*0.6)+","+Math.round(b0*0.6)+","+(alpha*0.8)+")";
+        dctx.beginPath(); dctx.arc(cx+c.ox*cw*0.5, cy+c.oy*ch*0.5, rad*0.35, 0,7); dctx.fill();
+      }
+      if(c.type==="bug"){ dctx.fillStyle="rgba(20,12,6,0.92)"; dctx.beginPath(); dctx.arc(cx,cy,rad*0.4,0,7); dctx.fill(); }
     }
-    if(c.soap){ dctx.fillStyle="rgba(245,250,255,0.7)"; dctx.beginPath(); dctx.arc(px+cw/2,py+ch/2,cw*0.7,0,7); dctx.fill(); }
+    if(c.soap){ dctx.fillStyle="rgba(245,250,255,0.7)"; dctx.beginPath(); dctx.arc(cx,cy,cw*0.75,0,7); dctx.fill(); }
     if(c.scratch>0){ dctx.strokeStyle="rgba(255,255,255,0.85)"; dctx.lineWidth=1.4;
-      dctx.beginPath(); dctx.moveTo(px,py+ch); dctx.lineTo(px+cw,py); dctx.stroke(); }
+      dctx.beginPath(); dctx.moveTo(cx-cw*0.5,cy+ch*0.5); dctx.lineTo(cx+cw*0.5,cy-ch*0.5); dctx.stroke(); }
   }
   // clip strictly to the car silhouette: dirt is ON the car, never floating above it
   dctx.globalCompositeOperation="destination-in";
-  dctx.imageSmoothingEnabled=false;
+  dctx.imageSmoothingEnabled=true;
   dctx.drawImage(silCanvas, 0,0,GW,GH, 0,0,W,H);
   dctx.globalCompositeOperation="source-over";
 }
@@ -403,7 +522,7 @@ function checkDad(){
   if(scratches>=18){
     dadShown=true; carScore-=2500;
     dadEl.classList.add("show");
-    beep(80,0.4,"sawtooth",0.09); speak("Hvad laver du! Pas på lakken!");
+    beep(80,0.4,"sawtooth",0.09); speak("Hvad laver du! Pas på lakken!",{pitch:0.7,rate:1.05});
     setTimeout(function(){ dadEl.classList.remove("show"); },1600);
   }
 }
@@ -416,7 +535,7 @@ function measureClean(){
   return total? clean/total : 1;
 }
 function updateBar(){ var p=Math.round(cleaned*100); bar.style.width=p+"%"; barPct.textContent=p+"%"; }
-function updateHud(){ scoreV.textContent=fmt(score); hsV.textContent=fmt(highscore); carV.textContent=(carIndex+1)+"/"+TOTAL; }
+function updateHud(){ scoreV.textContent=fmt(score)+" kr"; hsV.textContent=fmt(highscore)+" kr"; carV.textContent=(carIndex+1)+"/"+TOTAL; }
 function fmt(n){ return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,"."); }
 
 // ---------- cars flow ----------
@@ -433,6 +552,7 @@ function nextCar(){
   carStart=animTime;
   seagullTimer=Math.max(2.5, 6-carIndex*0.08);
   tauntTimer=4;
+  mortenTimer=Math.max(6, 11-carIndex*0.08);
 }
 
 function finishCar(){
@@ -441,12 +561,13 @@ function finishCar(){
   var speedBonus=Math.max(0.3, 3 - t/8);
   var queueMult=1 + carIndex*0.05;
   var quality=Math.max(0.4, 1.4 - scratches*0.05);
-  var pts=Math.round(300*speedBonus*queueMult*quality + carScore);
-  if(pts<0)pts=0;
-  score=Math.min(100000, score+pts);
+  var priceMult=brand&&brand.p?brand.p:1;
+  var pay=Math.round(600*priceMult*speedBonus*queueMult*quality + carScore);
+  if(pay<0)pay=0;
+  score=Math.min(9999999, score+pay);
   if(score>highscore){ highscore=score; try{localStorage.setItem("carwash_highscore",String(highscore));}catch(e){} }
   updateHud(); sparkle(); burst();
-  flashBig.textContent="+"+fmt(pts)+" pts!";
+  flashBig.textContent="+"+fmt(pay)+" kr!";
   flashSub.textContent = scratches? (scratches+" scratches – dad noticed…") : "Perfect shine ✨";
   flash.classList.add("show");
   setTimeout(function(){ flash.classList.remove("show");
@@ -457,8 +578,8 @@ function finishCar(){
 
 function endGame(){
   running=false;
-  document.getElementById("overScore").textContent=fmt(score);
-  document.getElementById("overHs").textContent="Best: "+fmt(highscore);
+  document.getElementById("overScore").textContent=fmt(score)+" kr";
+  document.getElementById("overHs").textContent="Best: "+fmt(highscore)+" kr";
   document.getElementById("overLine").textContent="You cleaned "+TOTAL+" cars!";
   over.classList.add("show");
 }
@@ -475,14 +596,37 @@ function seagullPoop(sx){
     if(Math.abs(c.x-sx)<g.w*0.1 && c.y<g.y+g.h*0.6 && Math.random()<0.6){ c.type="poop"; c.dirt=Math.max(c.dirt,3); c.max=Math.max(c.max,3); } }
   splat(); renderDirt(); cleaned=measureClean(); updateBar();
 }
+
+// ---------- Morten (the villain) ----------
+function spawnMorten(){
+  var dir=Math.random()<0.5?1:-1;
+  mortens.push({ x: dir>0? -50 : W+50, y: geo.y+geo.h*0.62, dir:dir, thrown:false,
+    throwAt: geo.cx + (Math.random()*2-1)*geo.w*0.28 });
+}
+function mortenThrow(sx,sy){
+  // launch a visible mud ball toward the car, then splatter on impact
+  var tx=sx, ty=geo.y+geo.h*0.35+(Math.random()*2-1)*geo.h*0.15;
+  muds.push({ x:sx, y:sy-20, tx:tx, ty:ty, t:0 });
+  evilLaugh();
+  var line=MORTEN_LINES[Math.floor(Math.random()*MORTEN_LINES.length)];
+  bubbleSay("😈 Morten: "+line, true);
+  speak(line,{pitch:0.55,rate:1.05});
+}
+function mudSplat(px,py){
+  var g=geo, rad=g.w*0.14;
+  for(var i=0;i<cells.length;i++){ var c=cells[i]; if(!c.inCar)continue;
+    if(Math.hypot(c.x-px,c.y-py)<rad && Math.random()<0.75){ c.type="mud"; c.dirt=Math.max(c.dirt,3+Math.floor(Math.random()*2)); c.max=Math.max(c.max,c.dirt); } }
+  splat(); renderDirt(); cleaned=measureClean(); updateBar();
+}
+
 var GRAV=0.05;
 function burst(){ var cx=geo.cx, cy=geo.y+geo.h*0.3;
   for(var k=0;k<3;k++){ var hue=Math.random()*360, n=36;
     for(var i=0;i<n;i++){ var an=i/n*Math.PI*2, sp=1.5+Math.random()*3;
       particles.push({x:cx+(Math.random()*2-1)*40,y:cy,vx:Math.cos(an)*sp,vy:Math.sin(an)*sp,life:1,dec:0.01+Math.random()*0.01,hue:hue+Math.random()*30,sz:2+Math.random()*2}); } } }
 
-function bubbleSay(txt){
-  var b=document.createElement("div"); b.className="bubble"; b.textContent=txt; speech.appendChild(b);
+function bubbleSay(txt,evil){
+  var b=document.createElement("div"); b.className="bubble"+(evil?" evil":""); b.textContent=txt; speech.appendChild(b);
   setTimeout(function(){ if(b.parentNode)b.parentNode.removeChild(b); }, 3200);
   while(speech.childNodes.length>3) speech.removeChild(speech.firstChild);
 }
@@ -496,7 +640,9 @@ function loop(ts){
     seagullTimer-=dt/1000;
     if(seagullTimer<=0){ spawnSeagull(); seagullTimer=Math.max(2.2, 6-carIndex*0.08); }
     tauntTimer-=dt/1000;
-    if(tauntTimer<=0){ var t=TAUNTS[Math.floor(Math.random()*TAUNTS.length)]; bubbleSay("📣 "+t); honk(); if(Math.random()<0.6)speak(t); tauntTimer=Math.max(3, 7-carIndex*0.06); }
+    if(tauntTimer<=0){ var t=TAUNTS[Math.floor(Math.random()*TAUNTS.length)]; bubbleSay("📣 "+t); honk(); if(Math.random()<0.6)speak(t,{pitch:1.15,rate:1.08}); tauntTimer=Math.max(3, 7-carIndex*0.06); }
+    mortenTimer-=dt/1000;
+    if(mortenTimer<=0){ spawnMorten(); mortenTimer=Math.max(6, 12-carIndex*0.1); }
   }
 
   for(var i=seagulls.length-1;i>=0;i--){ var s=seagulls[i]; s.x+=s.dir*2.2*(dt/16);
@@ -505,6 +651,23 @@ function loop(ts){
     fctx.fillText(s.dir>0?"🕊️":"🐦", s.x, s.y);
     if(s.x< -60 || s.x>W+60) seagulls.splice(i,1);
   }
+
+  // Morten walks in, throws mud, laughs, walks out
+  for(var m=mortens.length-1;m>=0;m--){ var mo=mortens[m]; mo.x+=mo.dir*1.7*(dt/16);
+    if(!mo.thrown && ((mo.dir>0&&mo.x>=mo.throwAt)||(mo.dir<0&&mo.x<=mo.throwAt))){ mo.thrown=true; if(carActive) mortenThrow(mo.x,mo.y); }
+    var bob=Math.sin(animTime/120)*3;
+    fctx.font="34px sans-serif"; fctx.textAlign="center";
+    fctx.fillText("😈", mo.x, mo.y+bob);
+    fctx.font="11px -apple-system,sans-serif"; fctx.fillStyle="#ffd"; fctx.fillText("Morten", mo.x, mo.y+bob+16);
+    if(mo.x< -70 || mo.x>W+70) mortens.splice(m,1);
+  }
+
+  // flying mud balls
+  for(var q=muds.length-1;q>=0;q--){ var mb=muds[q]; mb.t+=dt/260;
+    if(mb.t>=1){ mudSplat(mb.tx,mb.ty); muds.splice(q,1); continue; }
+    var mx=mb.x+(mb.tx-mb.x)*mb.t, my=mb.y+(mb.ty-mb.y)*mb.t - Math.sin(mb.t*Math.PI)*60;
+    fctx.fillStyle="#5c4630"; fctx.beginPath(); fctx.arc(mx,my,7,0,7); fctx.fill(); }
+
   for(var j=sprays.length-1;j>=0;j--){ var sp=sprays[j]; sp.life-=dt/300;
     if(sp.life<=0){ sprays.splice(j,1); continue; }
     fctx.fillStyle="rgba(180,220,255,"+(sp.life*0.5)+")"; fctx.beginPath(); fctx.arc(sp.x,sp.y,14*(1-sp.life)+6,0,7); fctx.fill(); }
@@ -558,6 +721,8 @@ function startGame(){
   score=0; carIndex=0; running=true;
   startEl.classList.remove("show"); startEl.style.display="none";
   over.classList.remove("show");
+  mortens=[]; muds=[]; seagulls=[];
+  ac(); if(musicOn) startMusic();
   updateHud();
   nextCar();
 }
@@ -568,8 +733,9 @@ window.addEventListener("resize",resize);
 window.addEventListener("orientationchange",function(){ setTimeout(resize,300); });
 
 // boot
-document.getElementById("startHs").textContent = highscore? ("Best score: "+fmt(highscore)) : "";
-hsV.textContent=fmt(highscore);
+document.getElementById("startHs").textContent = highscore? ("Best: "+fmt(highscore)+" kr") : "";
+hsV.textContent=fmt(highscore)+" kr";
+musicBtn.textContent=musicOn?"🔊":"🔇";
 buildDock();
 resize();
 requestAnimationFrame(loop);
