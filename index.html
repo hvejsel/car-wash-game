@@ -39,14 +39,14 @@
   canvas#fx { position:absolute; inset:0; width:100%; height:100%; display:block; pointer-events:none; z-index:8; }
 
   /* ---- bottom controls ---- */
-  #dock { position:absolute; left:0; right:0; bottom:0; display:flex; gap:8px; justify-content:center;
-    padding:10px 12px calc(env(safe-area-inset-bottom) + 12px); z-index:6; pointer-events:none; }
+  #dock { position:absolute; left:0; right:0; bottom:0; display:flex; gap:6px; justify-content:center;
+    padding:10px 8px calc(env(safe-area-inset-bottom) + 12px); z-index:6; pointer-events:none; }
   .btn { pointer-events:auto; background:rgba(255,255,255,.12); border:2px solid rgba(255,255,255,.18);
-    border-radius:16px; padding:10px 14px; font-size:14px; font-weight:800; color:#fff; cursor:pointer;
-    display:flex; align-items:center; gap:6px; backdrop-filter:blur(4px); }
+    border-radius:16px; padding:10px 11px; font-size:13px; font-weight:800; color:#fff; cursor:pointer;
+    display:flex; align-items:center; gap:5px; backdrop-filter:blur(4px); }
   .btn:active { transform:scale(.96); }
   .btn.active { background:rgba(110,190,255,.35); border-color:rgba(150,210,255,.7); }
-  .btn .ic { font-size:19px; }
+  .btn .ic { font-size:18px; }
 
   #brush { position:absolute; width:60px; height:60px; margin:-30px 0 0 -30px; z-index:7;
     pointer-events:none; display:none; font-size:44px; line-height:60px; text-align:center;
@@ -72,7 +72,7 @@
   .big-btn:active { transform:translateY(4px); box-shadow:0 2px 0 #c76a00, 0 6px 12px rgba(0,0,0,.4); }
   #winCard .reward { font-size:22px; font-weight:900; color:#7be08a; }
   .hint { font-size:13px; opacity:.7; }
-  .credit { font-size:11px; opacity:.5; }
+  .credit { font-size:11px; opacity:.5; max-width:340px; }
   .emoji-row { font-size:40px; }
 </style>
 </head>
@@ -94,8 +94,9 @@
   </div>
 
   <div id="dock">
-    <div class="btn" id="turnBtn"><span class="ic">🔄</span>Turn</div>
+    <div class="btn" id="turnBtn" title="Turn the car"><span class="ic">🔄</span></div>
     <div class="btn active" id="broomBtn"><span class="ic">🧹</span>Broom</div>
+    <div class="btn" id="soapBtn"><span class="ic">🧼</span>Soap</div>
     <div class="btn" id="hoseBtn"><span class="ic">💦</span>Hose</div>
     <div class="btn" id="pistolBtn"><span class="ic">🔫</span>Pistol</div>
   </div>
@@ -104,12 +105,13 @@
   <div class="overlay" id="startCard">
     <div class="emoji-row">🏎️🧽✨</div>
     <h1>Tues 3D Carwash</h1>
-    <p>A muddy supercar rolls in. Scrub it with the broom, blast it with the hose
-       or snipe dirt with the water pistol!<br>
+    <p>A muddy supercar rolls in. Soap it up, scrub it with the broom, blast it
+       with the hose or snipe dirt with the water pistol!<br>
        Watch out for greasy Morten — he loves to throw mud.</p>
     <button class="big-btn" id="startBtn">▶ Play</button>
-    <div class="hint">Best on a phone. Drag on the car to clean. Tap Turn to spin it.</div>
-    <div class="credit">Ferrari 458 Italia 3D model by vicent091036 · rendered with three.js</div>
+    <div class="hint">Drag on the car to clean. Drag beside the car (or tap 🔄) to spin it around.</div>
+    <div class="credit">Ferrari 458 Italia 3D model by vicent091036 · sky &amp; ground: Poly Haven (CC0)
+      · houses, trees &amp; props: pmndrs market (CC0) · rendered with three.js</div>
   </div>
 
   <!-- win -->
@@ -132,7 +134,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { MeshSurfaceSampler } from 'three/addons/math/MeshSurfaceSampler.js';
 
 /* ============================================================= AUDIO ===== */
@@ -157,6 +159,12 @@ const Sound = (() => {
     g.gain.linearRampToValueAtTime(0.16,ctx.currentTime+0.01);
     g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.12);
     s.connect(f); f.connect(g); g.connect(master); s.start(); s.stop(ctx.currentTime+0.13); }
+  function squish(){ if(!on||!ctx) return; const s=noise(0.16); const f=ctx.createBiquadFilter();
+    f.type='lowpass'; f.frequency.setValueAtTime(1600,ctx.currentTime);
+    f.frequency.exponentialRampToValueAtTime(300,ctx.currentTime+0.14);
+    const g=ctx.createGain(); g.gain.setValueAtTime(0.18,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.16);
+    s.connect(f); f.connect(g); g.connect(master); s.start(); s.stop(ctx.currentTime+0.18); }
   function splat(){ if(!on||!ctx) return; const s=noise(0.2); const f=ctx.createBiquadFilter();
     f.type='lowpass'; f.frequency.setValueAtTime(900,ctx.currentTime);
     f.frequency.exponentialRampToValueAtTime(120,ctx.currentTime+0.18);
@@ -196,7 +204,7 @@ const Sound = (() => {
   function startMusic(){ ensure(); if(!ctx) return; if(musicTimer) clearInterval(musicTimer);
     musicTimer=setInterval(musicStep,220); }
   function toggle(){ on=!on; musicOn=on; if(on){ resume(); startMusic(); } else sprayStop(); return on; }
-  return { resume, scrub, splat, laugh, sparkle, coin, startMusic, toggle, sprayStart, sprayStop, isOn:()=>on };
+  return { resume, scrub, squish, splat, laugh, sparkle, coin, startMusic, toggle, sprayStart, sprayStop, isOn:()=>on };
 })();
 
 /* ============================================================= SCENE ===== */
@@ -206,38 +214,102 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.85;
+renderer.toneMappingExposure = 0.9;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#7fb4e0');
-scene.fog = new THREE.Fog('#7fb4e0', 24, 60);
+scene.background = new THREE.Color('#9cc4e4');
+scene.fog = new THREE.Fog('#cfe3f2', 32, 95);
 
-const pmrem = new THREE.PMREMGenerator(renderer);
-scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
-
-const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 300);
 camera.position.set(6.4, 3.4, 9.4);
 camera.lookAt(0, 0.7, 0);
+
+/* Real HDR sky from Poly Haven — lights the whole scene and the car paint. */
+let skyReady=false;
+new RGBELoader().load('models/sky.hdr', tex => {
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  scene.background = tex;
+  scene.environment = tex;
+  skyReady = true;
+});
 
 const hemi = new THREE.HemisphereLight('#dff0ff', '#33506a', 0.25); scene.add(hemi);
 const sun = new THREE.DirectionalLight('#fff6e0', 1.3);
 sun.position.set(8, 14, 6); sun.castShadow = true;
 sun.shadow.mapSize.set(2048,2048);
-sun.shadow.camera.left=-10; sun.shadow.camera.right=10; sun.shadow.camera.top=10; sun.shadow.camera.bottom=-10;
+sun.shadow.camera.left=-14; sun.shadow.camera.right=14; sun.shadow.camera.top=14; sun.shadow.camera.bottom=-14;
 sun.shadow.bias=-0.0004; sun.shadow.normalBias=0.03;
 scene.add(sun);
 
-const ground = new THREE.Mesh(new THREE.CircleGeometry(34, 48),
-  new THREE.MeshStandardMaterial({ color:'#4d5a66', roughness:0.95, metalness:0 }));
+/* Ground: photographic grass with an asphalt wash pad + driveway (Poly Haven). */
+const texLoader = new THREE.TextureLoader();
+function groundTex(url, rep){
+  const t=texLoader.load(url);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rep,rep);
+  t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=4;
+  return t;
+}
+const ground = new THREE.Mesh(new THREE.CircleGeometry(60, 48),
+  new THREE.MeshStandardMaterial({ map:groundTex('models/ground-grass.jpg', 24), roughness:1, metalness:0 }));
 ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
-const pad = new THREE.Mesh(new THREE.CircleGeometry(6.2, 40),
-  new THREE.MeshStandardMaterial({ color:'#39444e', roughness:1, polygonOffset:true, polygonOffsetFactor:-1 }));
+const asphaltMat = new THREE.MeshStandardMaterial({ map:groundTex('models/ground-asphalt.jpg', 5),
+  roughness:0.95, metalness:0, polygonOffset:true, polygonOffsetFactor:-1 });
+const pad = new THREE.Mesh(new THREE.CircleGeometry(6.2, 40), asphaltMat);
 pad.rotation.x = -Math.PI/2; pad.position.y = 0.005; pad.receiveShadow = true; scene.add(pad);
+const driveMat = new THREE.MeshStandardMaterial({ map:groundTex('models/ground-asphalt.jpg', 3),
+  roughness:0.95, metalness:0, polygonOffset:true, polygonOffsetFactor:-1 });
+const driveway = new THREE.Mesh(new THREE.PlaneGeometry(26, 4.6), driveMat);
+driveway.rotation.x = -Math.PI/2; driveway.rotation.z = Math.PI/2;
+driveway.position.set(17, 0.004, -0.5); driveway.receiveShadow = true; scene.add(driveway);
 for(let i=0;i<8;i++){
   const s=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.02,3.2),
     new THREE.MeshStandardMaterial({color:'#ffd23f',roughness:1}));
   const a=i/8*Math.PI*2; s.position.set(Math.cos(a)*4.6,0.02,Math.sin(a)*4.6); s.rotation.y=-a; scene.add(s);
 }
+
+/* ============================== 3D ENVIRONMENT (pmndrs market, CC0) ======= */
+const draco = new DRACOLoader();
+draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/');
+const gltfLoader = new GLTFLoader();
+gltfLoader.setDRACOLoader(draco);
+function loadGltf(url){ return new Promise((res,rej)=>gltfLoader.load(url,res,undefined,rej)); }
+
+let envCount=0;
+function placeProp(gltf, x, z, size, rotY){
+  const obj = gltf.scene.clone(true);
+  const box = new THREE.Box3().setFromObject(obj);
+  const dim = box.getSize(new THREE.Vector3());
+  const s = size / Math.max(dim.x, dim.y, dim.z);
+  obj.scale.setScalar(s);
+  const box2 = new THREE.Box3().setFromObject(obj);
+  const c = box2.getCenter(new THREE.Vector3());
+  obj.position.set(x - c.x, -box2.min.y, z - c.z);
+  if(rotY) obj.rotation.y = rotY;
+  obj.traverse(o => { if(o.isMesh){ o.castShadow = true; } });
+  scene.add(obj);
+  envCount++;
+}
+const ENV_FILES = ['env-house-3','env-house-4','env-house-5','env-tree-big','env-tree-small',
+  'env-low-poly-tree','env-bench','env-barrel','env-plant','env-formation-rock','env-formation-stone'];
+const envAssets = {};
+Promise.all(ENV_FILES.map(n => loadGltf('models/'+n+'.gltf').then(g => { envAssets[n]=g; })))
+  .then(() => {
+    placeProp(envAssets['env-house-3'], -15, -11, 7,  0.5);
+    placeProp(envAssets['env-house-4'],  -5, -16, 6.5, 0.15);
+    placeProp(envAssets['env-house-5'],  13, -14, 7, -0.55);
+    placeProp(envAssets['env-tree-big'], -10, -5, 5.5);
+    placeProp(envAssets['env-tree-big'],  17, -7, 6, 1.2);
+    placeProp(envAssets['env-tree-small'],  8, -11, 3.6, 0.7);
+    placeProp(envAssets['env-low-poly-tree'], -17, 3, 5.5);
+    placeProp(envAssets['env-tree-small'], -8, 12, 3.2, 2.1);
+    placeProp(envAssets['env-bench'], -5.2, 6.6, 1.7, 2.6);
+    placeProp(envAssets['env-plant'], -6.6, 6.2, 0.7);
+    placeProp(envAssets['env-barrel'], 5.6, 4.6, 0.95, 0.4);
+    placeProp(envAssets['env-barrel'], 6.3, 3.9, 0.95, 1.9);
+    placeProp(envAssets['env-formation-rock'], -9, 9.5, 1.7, 0.8);
+    placeProp(envAssets['env-formation-stone'], 11, 7.5, 1.3, 2.2);
+  })
+  .catch(err => console.warn('Environment props failed to load', err));
 
 /* ============================== CAR: real GLTF model (three.js Ferrari) === */
 const CAR_SPECS = [
@@ -250,11 +322,6 @@ const CAR_SPECS = [
   { name:'Arancio Fury',  body:'#ff6a00', details:'#111111', price:215 },
   { name:'Bianco Ice',    body:'#f2f4f7', details:'#111111', price:205 },
 ];
-
-const draco = new DRACOLoader();
-draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/');
-const gltfLoader = new GLTFLoader();
-gltfLoader.setDRACOLoader(draco);
 
 const aoTexture = new THREE.TextureLoader().load('models/ferrari_ao.png');
 const glassMaterial = new THREE.MeshPhysicalMaterial({ color:0xffffff, metalness:0.25, roughness:0, transmission:1.0 });
@@ -271,9 +338,10 @@ gltfLoader.load('models/ferrari.glb', gltf => {
   console.error('Car model failed to load', err);
 });
 
+let bodyMaterial=null;
 function buildCar(spec){
   const model = carTemplate.clone(true);
-  const bodyMaterial = new THREE.MeshPhysicalMaterial({
+  bodyMaterial = new THREE.MeshPhysicalMaterial({
     color:spec.body, metalness:1.0, roughness:0.5, clearcoat:1.0, clearcoatRoughness:0.03 });
   const detailsMaterial = new THREE.MeshStandardMaterial({
     color:spec.details, metalness:1.0, roughness:0.5 });
@@ -292,29 +360,86 @@ function buildCar(spec){
   return g;
 }
 
-/* ================================================= DIRT (3D on car) ====== */
+/* ============================= DIRT: real 3D models stuck on the car ======
+   Three kinds of dirt, all raycast-scrubbed off the paint:
+   - splat : flattened mud splash (procedural, 1 hit)
+   - clod  : mud clump — real rock/stone GLTF geometry, mud-tinted (2 hits)
+   - trash : a crushed soda can (pmndrs market GLTF, 1 hit)               */
 const dirtMatCache = [
   new THREE.MeshStandardMaterial({ color:'#4a3018', roughness:1 }),
   new THREE.MeshStandardMaterial({ color:'#3b2a14', roughness:1 }),
   new THREE.MeshStandardMaterial({ color:'#5a3a1e', roughness:1 }),
   new THREE.MeshStandardMaterial({ color:'#2f2210', roughness:1 }),
 ];
-const dirtGeo = new THREE.IcosahedronGeometry(1, 0);
-(() => { const p=dirtGeo.attributes.position;
+const splatGeo = new THREE.IcosahedronGeometry(1, 0);
+(() => { const p=splatGeo.attributes.position;
   for(let i=0;i<p.count;i++){ const f=0.7+Math.random()*0.6;
     p.setXYZ(i,p.getX(i)*f,p.getY(i)*f*0.55,p.getZ(i)*f); }
-  dirtGeo.computeVertexNormals(); })();
+  splatGeo.computeVertexNormals(); })();
+
+let clodGeos=[], canTemplate=null, dirtModelsReady=false;
+function extractUnitGeometry(gltf){
+  let geo=null;
+  gltf.scene.updateWorldMatrix(true, true);
+  gltf.scene.traverse(o => { if(o.isMesh && !geo){
+    geo = o.geometry.clone(); geo.applyMatrix4(o.matrixWorld); } });
+  geo.computeBoundingBox();
+  const c = geo.boundingBox.getCenter(new THREE.Vector3());
+  geo.translate(-c.x, -c.y, -c.z);
+  const dim = geo.boundingBox.getSize(new THREE.Vector3());
+  const s = 2 / Math.max(dim.x, dim.y, dim.z);
+  geo.scale(s, s, s);
+  geo.computeVertexNormals();
+  return geo;
+}
+Promise.all([
+  loadGltf('models/env-formation-rock.gltf'),
+  loadGltf('models/env-formation-stone.gltf'),
+  loadGltf('models/dirt-can.gltf'),
+]).then(([rock, stone, can]) => {
+  clodGeos = [extractUnitGeometry(rock), extractUnitGeometry(stone)];
+  const obj = can.scene.clone(true);
+  const canMat = new THREE.MeshStandardMaterial({ color:'#aab2bc', metalness:0.9, roughness:0.35 });
+  obj.traverse(o => { if(o.isMesh) o.material = canMat; });
+  const box = new THREE.Box3().setFromObject(obj);
+  const dim = box.getSize(new THREE.Vector3());
+  obj.scale.setScalar(2 / Math.max(dim.x, dim.y, dim.z));
+  const c = box.getCenter(new THREE.Vector3()).multiplyScalar(obj.scale.x);
+  obj.position.set(-c.x, -c.y, -c.z);
+  canTemplate = new THREE.Group(); canTemplate.add(obj);
+  dirtModelsReady = true;
+  if(pendingStart && carReady){ pendingStart=false; beginGame(); }
+}).catch(err => { dirtModelsReady = true; console.warn('Dirt models failed, using splats only', err); });
 
 let carGroup=null, dirtGroup=null, dirtPatches=[], initialDirt=0, raycaster=new THREE.Raycaster();
 
 const UP=new THREE.Vector3(0,1,0);
-function makeDirtPatch(size, normal){
-  const m=new THREE.Mesh(dirtGeo, dirtMatCache[(Math.random()*dirtMatCache.length)|0]);
+function makeDirtPatch(size, normal, forceType){
+  const r = Math.random();
+  let type = forceType || (r<0.5 ? 'splat' : r<0.85 ? 'clod' : 'trash');
+  if(type==='clod' && !clodGeos.length) type='splat';
+  if(type==='trash' && !canTemplate) type='splat';
+  let m;
   const s=size*(0.7+Math.random()*0.6);
-  m.scale.set(s, s*0.35, s);                     // flat splat
+  if(type==='splat'){
+    m=new THREE.Mesh(splatGeo, dirtMatCache[(Math.random()*dirtMatCache.length)|0]);
+    m.scale.set(s, s*0.35, s);
+  } else if(type==='clod'){
+    m=new THREE.Mesh(clodGeos[(Math.random()*clodGeos.length)|0],
+      dirtMatCache[(Math.random()*dirtMatCache.length)|0]);
+    m.scale.set(s*0.8, s*0.5, s*0.8);
+  } else {
+    m=canTemplate.clone(true);
+    m.scale.setScalar(s*0.9);
+  }
   if(normal) m.quaternion.setFromUnitVectors(UP, normal.clone().normalize());
   m.rotateY(Math.random()*Math.PI*2);
-  m.userData.isDirt=true; return m;
+  m.userData.isDirt=true;
+  m.userData.type=type;
+  m.userData.hp = type==='clod' ? 2 : 1;
+  m.userData.soaped=false;
+  m.traverse(o => { o.userData.patchRoot = m; });
+  return m;
 }
 
 /* Sample dirt directly on the car body surface (car must be at rotation 0). */
@@ -336,7 +461,7 @@ function scatterDirtOnCar(count, size){
   }
 }
 
-function clearCar(){ if(carGroup) scene.remove(carGroup); dirtGroup=null; dirtPatches=[]; }
+function clearCar(){ if(carGroup) scene.remove(carGroup); dirtGroup=null; dirtPatches=[]; foamTrail.length=0; }
 
 let carIndex=0;
 function loadCar(spec){
@@ -434,7 +559,7 @@ function updateMud(dt){
     p.userData.life-=dt;
     if(p.userData.life<=0 || p.position.y<=0.2){
       if(state.playing && dirtGroup){
-        const patch=makeDirtPatch(0.16, UP);
+        const patch=makeDirtPatch(0.16, UP, 'splat');
         const wp=p.position.clone(); wp.y=Math.max(wp.y,0.45);
         patch.position.copy(dirtGroup.worldToLocal(wp));
         dirtGroup.add(patch); dirtPatches.push(patch);
@@ -458,11 +583,19 @@ const Water = (() => {
   const dummy=new THREE.Object3D();
   const Z=new THREE.Vector3(0,0,1), vn=new THREE.Vector3();
   const cJet=new THREE.Color(), cA=new THREE.Color('#7cc4ff'), cB=new THREE.Color('#eaf8ff'), cSplash=new THREE.Color('#ffffff');
+  const cMud=new THREE.Color('#8a6a3a');
   const parts=[];   // {p,v,life,maxLife,s,c,splash}
 
   function spawn(p,v,life,s,color,splash){
     if(parts.length>=MAX) parts.shift();
     parts.push({ p:p.clone(), v:v.clone(), life, maxLife:life, s, c:color.clone(), splash:!!splash });
+  }
+  /* Dirty water running off the car where dirt was just washed away. */
+  function runoff(p){
+    for(let k=0;k<7;k++){
+      const v=new THREE.Vector3((Math.random()-0.5)*1.4, -0.4-Math.random()*0.8, (Math.random()-0.5)*1.4);
+      spawn(p, v, 0.5+Math.random()*0.3, 0.8+Math.random()*0.7, cMud, true);
+    }
   }
   /* Emit a jet from a nozzle near the bottom of the screen toward the target. */
   const ndcSrc=new THREE.Vector3();
@@ -527,8 +660,52 @@ const Water = (() => {
     mesh.instanceMatrix.needsUpdate=true;
     if(mesh.instanceColor) mesh.instanceColor.needsUpdate=true;
   }
-  return { emit, update, count:()=>parts.length };
+  return { emit, update, runoff, count:()=>parts.length };
 })();
+
+/* ============================================ FOAM (soap suds) =========== */
+const foamGeo = new THREE.SphereGeometry(1, 8, 6);
+const foamTrail = [];    // {mesh, life}
+function foamMaterial(){ return new THREE.MeshStandardMaterial({
+  color:'#ffffff', roughness:0.35, metalness:0, transparent:true, opacity:0.95 }); }
+function makeFoamBlob(size){
+  const g=new THREE.Group();
+  const mat=foamMaterial();
+  const n=3+((Math.random()*3)|0);
+  for(let i=0;i<n;i++){
+    const b=new THREE.Mesh(foamGeo, mat);
+    const r=size*(0.35+Math.random()*0.4);
+    b.scale.set(r,r*0.75,r);
+    b.position.set((Math.random()-0.5)*size, Math.random()*size*0.25, (Math.random()-0.5)*size);
+    g.add(b);
+  }
+  return g;
+}
+function addFoamTrail(worldPoint, normal){
+  if(!dirtGroup || foamTrail.length>120) return;
+  const blob=makeFoamBlob(0.14);
+  if(normal) blob.quaternion.setFromUnitVectors(UP, normal.clone().normalize());
+  blob.position.copy(dirtGroup.worldToLocal(worldPoint.clone().addScaledVector(normal||UP, 0.015)));
+  dirtGroup.add(blob);
+  foamTrail.push({ mesh:blob, life:3.5+Math.random() });
+}
+function updateFoam(dt){
+  for(let i=foamTrail.length-1;i>=0;i--){
+    const f=foamTrail[i];
+    f.life-=dt;
+    if(f.life<1) f.mesh.children.forEach(m=>{ m.material.opacity=Math.max(f.life,0)*0.95; });
+    if(f.life<=0){ f.mesh.parent && f.mesh.parent.remove(f.mesh); foamTrail.splice(i,1); }
+  }
+}
+function soapPatch(patch){
+  if(patch.userData.soaped) return false;
+  patch.userData.soaped=true;
+  const foam=makeFoamBlob(1.6);          // relative to patch scale
+  patch.add(foam);
+  patch.userData.foam=foam;
+  Sound.squish();
+  return true;
+}
 
 /* ============================================ SPEECH BUBBLES ============== */
 const speechEl=document.getElementById('speech');
@@ -590,49 +767,101 @@ function cleanPct(){ return Math.round((1-dirtRemaining())*100); }
 function updateBar(){ const pct=cleanPct(); barEl.style.width=pct+'%'; barPctEl.textContent=pct+'%';
   if(state.playing && dirtPatches.length===0 && initialDirt>0) win(); }
 
-function removePatch(patch){
+/* Dying patches shrink out instead of popping. */
+const dying=[];
+function updateDying(dt){
+  for(let i=dying.length-1;i>=0;i--){
+    const d=dying[i]; d.t-=dt;
+    const f=Math.max(d.t/0.22, 0.001);
+    d.obj.scale.copy(d.s0).multiplyScalar(f);
+    if(d.t<=0){ d.obj.parent && d.obj.parent.remove(d.obj); dying.splice(i,1); }
+  }
+}
+function killPatch(patch, withWater){
   const idx=dirtPatches.indexOf(patch); if(idx<0) return false;
-  dirtPatches.splice(idx,1); dirtGroup.remove(patch);
+  dirtPatches.splice(idx,1);
   const wp=new THREE.Vector3(); patch.getWorldPosition(wp);
-  spawnPoof(wp, '#'+patch.material.color.getHexString());
+  if(patch.userData.foam){ patch.remove(patch.userData.foam); }
+  dying.push({ obj:patch, t:0.22, s0:patch.scale.clone() });
+  spawnPoof(wp, patch.userData.soaped ? '#eef6ff' : '#7a5a30');
+  if(withWater) Water.runoff(wp);
   Sound.scrub(); updateBar();
   if(dirtPatches.length && Math.random()<0.04 && cleanPct()<100) say(CLEAN_TAUNTS[(Math.random()*CLEAN_TAUNTS.length)|0]);
   return true;
 }
+/* One cleaning hit: soaped dirt washes right off, tough clods shrink first. */
+function hitPatch(patch, withWater){
+  if(dirtPatches.indexOf(patch)<0) return false;
+  const dmg = patch.userData.soaped ? 2 : 1;
+  patch.userData.hp -= dmg;
+  if(patch.userData.hp <= 0) return killPatch(patch, withWater);
+  patch.scale.multiplyScalar(0.62);      // half-scrubbed: visibly smaller
+  const wp=new THREE.Vector3(); patch.getWorldPosition(wp);
+  spawnPoof(wp, '#7a5a30');
+  if(withWater) Water.runoff(wp);
+  Sound.scrub();
+  return true;
+}
 
-/* ============================================ INPUT (scrub + spray) ====== */
+/* ============================================ INPUT ====================== */
+/* Drag ON the car: clean (or soap). Drag BESIDE the car: spin it around so
+   you can wash every side. The Turn button also spins it 60° per tap.      */
 const brushEl=document.getElementById('brush');
-let pointerDown=false, mode='broom', pointerX=0, pointerY=0;
-const MODE_ICON={ broom:'🧹', hose:'💦', pistol:'🔫' };
+let pointerDown=false, rotating=false, mode='broom', pointerX=0, pointerY=0, lastRotX=0;
+const MODE_ICON={ broom:'🧹', soap:'🧼', hose:'💦', pistol:'🔫' };
 const ndc=new THREE.Vector2();
-function pointerToScrub(clientX, clientY){
-  if(!dirtPatches.length) return;
+function patchRootOf(obj){ let o=obj; while(o && !o.userData.isDirt) o=o.parent; return o; }
+function setRay(clientX, clientY){
   const rect=canvas.getBoundingClientRect();
   ndc.x=((clientX-rect.left)/rect.width)*2-1;
   ndc.y=-((clientY-rect.top)/rect.height)*2+1;
   raycaster.setFromCamera(ndc, camera);
-  const hits=raycaster.intersectObjects(dirtPatches, false);
-  const removeN = mode==='hose'?3 : mode==='pistol'?2 : 1;
-  let removed=0;
-  for(const h of hits){ if(removed>=removeN) break; if(removePatch(h.object)) removed++; }
-  if(removed<removeN){
+}
+function pointerOnCar(clientX, clientY){
+  if(!carGroup) return false;
+  setRay(clientX, clientY);
+  return raycaster.intersectObject(carGroup, true).length>0;
+}
+function pointerToScrub(clientX, clientY){
+  if(!dirtPatches.length) return;
+  setRay(clientX, clientY);
+  const soapMode = mode==='soap';
+  const withWater = mode==='hose' || mode==='pistol';
+  const actOn = soapMode ? (p=>soapPatch(p)) : (p=>hitPatch(p, withWater));
+  const hits=raycaster.intersectObjects(dirtPatches, true);
+  const actN = mode==='hose'?3 : mode==='pistol'?2 : mode==='soap'?4 : 1;
+  let acted=0;
+  const seen=new Set();
+  for(const h of hits){ if(acted>=actN) break;
+    const root=patchRootOf(h.object);
+    if(!root || seen.has(root)) continue; seen.add(root);
+    if(actOn(root)) acted++; }
+  if(acted<actN){
+    const rect=canvas.getBoundingClientRect();
     const px=(clientX-rect.left)/rect.width, py=(clientY-rect.top)/rect.height;
     const cand=[];
-    for(const p of dirtPatches){ const wp=new THREE.Vector3(); p.getWorldPosition(wp);
+    for(const p of dirtPatches){ if(seen.has(p)) continue;
+      const wp=new THREE.Vector3(); p.getWorldPosition(wp);
       const v=wp.clone().project(camera); const sx=(v.x*0.5+0.5), sy=(-v.y*0.5+0.5);
       const dx=sx-px, dy=sy-py; cand.push({p,d:dx*dx+dy*dy}); }
     cand.sort((a,b)=>a.d-b.d);
-    const thresh = mode==='hose'?0.010 : mode==='pistol'?0.004 : 0.0016;
-    for(let i=0;i<cand.length && removed<removeN;i++){ if(cand[i].d<thresh){ if(removePatch(cand[i].p)) removed++; } }
+    const thresh = mode==='hose'?0.010 : mode==='pistol'?0.004 : mode==='soap'?0.006 : 0.0016;
+    for(let i=0;i<cand.length && acted<actN;i++){ if(cand[i].d<thresh){ if(actOn(cand[i].p)) acted++; } }
+  }
+  /* Soap also leaves suds on the paint where you rub. */
+  if(soapMode && carGroup){
+    const bodyHits=raycaster.intersectObject(carGroup.userData.bodyMesh, false);
+    if(bodyHits.length){
+      const h=bodyHits[0];
+      const n=h.face ? h.face.normal.clone().transformDirection(carGroup.userData.bodyMesh.matrixWorld) : UP;
+      addFoamTrail(h.point, n);
+    }
   }
 }
 /* World-space point the water should hit: the car under the finger, else the ground. */
 const groundPlane=new THREE.Plane(new THREE.Vector3(0,1,0), 0);
 function pointerToWorld(clientX, clientY){
-  const rect=canvas.getBoundingClientRect();
-  ndc.x=((clientX-rect.left)/rect.width)*2-1;
-  ndc.y=-((clientY-rect.top)/rect.height)*2+1;
-  raycaster.setFromCamera(ndc, camera);
+  setRay(clientX, clientY);
   if(carGroup){
     const hits=raycaster.intersectObject(carGroup, true);
     if(hits.length) return hits[0].point;
@@ -643,39 +872,52 @@ function pointerToWorld(clientX, clientY){
 function showBrush(x,y){ brushEl.style.display='block'; brushEl.style.left=x+'px'; brushEl.style.top=y+'px';
   brushEl.textContent=MODE_ICON[mode]; }
 function hideBrush(){ brushEl.style.display='none'; }
-function stopSpray(){ pointerDown=false; hideBrush(); Sound.sprayStop(); }
+function stopSpray(){ pointerDown=false; rotating=false; hideBrush(); Sound.sprayStop(); }
 
 canvas.addEventListener('pointerdown',e=>{ if(!state.playing) return; pointerDown=true;
   pointerX=e.clientX; pointerY=e.clientY;
-  canvas.setPointerCapture(e.pointerId); showBrush(e.clientX,e.clientY);
-  if(mode==='broom') pointerToScrub(e.clientX,e.clientY);
+  canvas.setPointerCapture(e.pointerId);
+  if(!pointerOnCar(e.clientX,e.clientY)){       // off the car → spin it around
+    rotating=true; lastRotX=e.clientX; return;
+  }
+  showBrush(e.clientX,e.clientY);
+  if(mode==='broom'||mode==='soap') pointerToScrub(e.clientX,e.clientY);
   else Sound.sprayStart(); });
 canvas.addEventListener('pointermove',e=>{ if(!state.playing||!pointerDown) return;
   pointerX=e.clientX; pointerY=e.clientY;
+  if(rotating){
+    carTargetRot += (e.clientX-lastRotX)*0.012; lastRotX=e.clientX; return;
+  }
   showBrush(e.clientX,e.clientY);
-  if(mode==='broom') pointerToScrub(e.clientX,e.clientY); });
+  if(mode==='broom'||mode==='soap') pointerToScrub(e.clientX,e.clientY); });
 window.addEventListener('pointerup',stopSpray);
 window.addEventListener('pointercancel',stopSpray);
 
-/* Water modes clean continuously while held. */
-let waterScrubT=0;
+/* Water modes clean continuously while held; water also makes the paint wet. */
+let waterScrubT=0, wetness=0;
 function updateWaterInput(dt){
-  if(!pointerDown || mode==='broom' || !state.playing) return;
+  if(!pointerDown || rotating || mode==='broom' || mode==='soap' || !state.playing) return;
   const target=pointerToWorld(pointerX, pointerY);
-  if(target) Water.emit(target, mode);
+  if(target){ Water.emit(target, mode); wetness=Math.min(wetness+dt*0.9, 1); }
   waterScrubT+=dt;
   if(waterScrubT>0.09){ waterScrubT=0; pointerToScrub(pointerX, pointerY); }
+}
+function updateWetness(dt){
+  wetness=Math.max(wetness-dt*0.12, 0);
+  if(bodyMaterial) bodyMaterial.roughness = 0.5 - 0.32*wetness;   // wet paint = shinier
 }
 
 /* ============================================ CONTROLS ================== */
 let carTargetRot=0;
 document.getElementById('turnBtn').addEventListener('click',()=>{ if(!state.playing) return; carTargetRot -= Math.PI/3; });
-const toolBtns={ broom:document.getElementById('broomBtn'), hose:document.getElementById('hoseBtn'), pistol:document.getElementById('pistolBtn') };
+const toolBtns={ broom:document.getElementById('broomBtn'), soap:document.getElementById('soapBtn'),
+  hose:document.getElementById('hoseBtn'), pistol:document.getElementById('pistolBtn') };
 function setMode(m){
   mode=m;
   for(const k in toolBtns) toolBtns[k].classList.toggle('active', k===m);
 }
 toolBtns.broom.addEventListener('click',()=>setMode('broom'));
+toolBtns.soap.addEventListener('click',()=>setMode('soap'));
 toolBtns.hose.addEventListener('click',()=>setMode('hose'));
 toolBtns.pistol.addEventListener('click',()=>setMode('pistol'));
 
@@ -722,7 +964,7 @@ function beginGame(){
 }
 document.getElementById('startBtn').addEventListener('click',()=>{
   if(carLoadError) { location.reload(); return; }
-  if(!carReady){ pendingStart=true; document.getElementById('startBtn').textContent='⏳ Loading car…'; return; }
+  if(!carReady || !dirtModelsReady){ pendingStart=true; document.getElementById('startBtn').textContent='⏳ Loading car…'; return; }
   beginGame();
 });
 document.getElementById('nextBtn').addEventListener('click',()=>{
@@ -741,10 +983,11 @@ window.addEventListener('resize',resize);
 
 let last=performance.now();
 function loop(now){
-  const dt=Math.min((now-last)/1000, 0.05); last=now;
-  if(carGroup) carGroup.rotation.y += (carTargetRot-carGroup.rotation.y)*Math.min(dt*6,1);
+  const dtRaw=(now-last)/1000, dt=Math.min(dtRaw, 0.05); last=now;
+  if(carGroup) carGroup.rotation.y += (carTargetRot-carGroup.rotation.y)*Math.min(dtRaw*6,1);
   updateMorten(dt); updateMud(dt); scheduleMorten(dt);
   updateWaterInput(dt); Water.update(dt);
+  updateFoam(dt); updateDying(dt); updateWetness(dt);
   renderer.render(scene,camera);
   if(!fxActive){ fxc.clearRect(0,0,fx.width,fx.height); drawPoofs(); }
   requestAnimationFrame(loop);
@@ -755,7 +998,7 @@ requestAnimationFrame(boot);
 /* ============================================ TEST HOOKS ================ */
 window.__game = {
   state,
-  carReady:()=>carReady,
+  carReady:()=>carReady && dirtModelsReady,
   carLoadError:()=>carLoadError,
   dirtCount:()=>dirtPatches.length,
   initialDirt:()=>initialDirt,
@@ -767,8 +1010,8 @@ window.__game = {
   emitWaterAt:(x,y,z)=>Water.emit(new THREE.Vector3(x,y,z), mode==='broom'?'hose':mode),
   start:()=>document.getElementById('startBtn').click(),
   next:()=>document.getElementById('nextBtn').click(),
-  cleanAll:()=>{ while(dirtPatches.length){ removePatch(dirtPatches[dirtPatches.length-1]); } },
-  scrubOne:()=>{ if(dirtPatches.length) return removePatch(dirtPatches[dirtPatches.length-1]); return false; },
+  cleanAll:()=>{ while(dirtPatches.length){ killPatch(dirtPatches[dirtPatches.length-1]); } },
+  scrubOne:()=>{ if(dirtPatches.length) return killPatch(dirtPatches[dirtPatches.length-1]); return false; },
   dirtScreen:()=>{ let best=null, bd=1e9; const wp=new THREE.Vector3();
     for(const p of dirtPatches){ p.getWorldPosition(wp); const v=wp.clone().project(camera);
       const sx=v.x*0.5+0.5, sy=-v.y*0.5+0.5, d=(sx-0.5)*(sx-0.5)+(sy-0.5)*(sy-0.5);
@@ -780,6 +1023,25 @@ window.__game = {
     morten.localToWorld(v); v.project(camera); return { sx:(v.x*0.5+0.5), sy:(-v.y*0.5+0.5), z:v.z }; },
   projify:(x,y,z)=>{ const v=new THREE.Vector3(x,y,z).project(camera); return { sx:(v.x*0.5+0.5), sy:(-v.y*0.5+0.5), z:v.z }; },
   webglOK:()=>!!renderer.getContext(),
+  /* new: rotation / environment / dirt-model / lifelike hooks */
+  rotY:()=>carGroup ? carGroup.rotation.y : 0,
+  rotTarget:()=>carTargetRot,
+  turn:()=>document.getElementById('turnBtn').click(),
+  envCount:()=>envCount,
+  skyReady:()=>skyReady,
+  dirtTypes:()=>{ const t={splat:0,clod:0,trash:0};
+    for(const p of dirtPatches) t[p.userData.type]=(t[p.userData.type]||0)+1; return t; },
+  soapedCount:()=>dirtPatches.filter(p=>p.userData.soaped).length,
+  foamTrailCount:()=>foamTrail.length,
+  damageFirstClod:()=>{ const p=dirtPatches.find(q=>q.userData.type==='clod' && !q.userData.soaped);
+    if(!p) return null; const before=p.scale.x; hitPatch(p,false);
+    return { removed:dirtPatches.indexOf(p)<0, scaleBefore:before, scaleAfter:p.scale.x }; },
+  wetness:()=>wetness,
+  isRotating:()=>rotating,
+  probeCar:(px,py)=>{ const rect=canvas.getBoundingClientRect();
+    setRay(rect.left+rect.width*px, rect.top+rect.height*py);
+    return raycaster.intersectObject(carGroup, true).slice(0,3)
+      .map(h=>({ name:h.object.name||h.object.type, d:+h.distance.toFixed(2), pt:h.point.toArray().map(v=>+v.toFixed(2)) })); },
 };
 </script>
 </body>
